@@ -1,0 +1,41 @@
+name: Compilar Port macOS Nactivo
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Clonar repositorio fuente
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configurar dependencias del sistema
+        run: |
+          brew install xcodegen zstd spirv-cross glslang
+
+      - name: Inyectar llaves criptograficas de seguridad
+        run: |
+          mkdir -p ~/.switch
+          echo "${{ secrets.PROD_KEYS }}" > ~/.switch/prod.keys
+          echo "${{ secrets.TITLE_KEYS }}" > ~/.switch/title.keys
+
+      - name: Descarga interna del juego masivo
+        run: |
+          curl -L -o game.nup "${{ secrets.GAME_URL }}"
+
+      - name: Ejecutar extraccion de graficos y shaders
+        run: |
+          python3 scripts/extract.py game.nup
+
+      - name: Compilar binario nativo Apple Silicon
+        run: |
+          xcodegen generate
+          xcodebuild -project OOTRemake.xcodeproj -scheme OOTRemake -configuration Release
+
+      - name: Empaquetar y subir instalador limpio terminado
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zelda-OOT-Remake-macOS
+          path: build/Release/*.app
