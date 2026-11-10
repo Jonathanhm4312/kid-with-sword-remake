@@ -25,12 +25,16 @@ jobs:
         run: |
           curl -L -o game.nup "${{ secrets.GAME_URL }}"
 
-      - name: Descargar e inyectar Firmware del sistema operativo
+      - name: Descargar e inyectar Firmware Oficial
         run: |
           mkdir -p firmware
-          curl -L -o firmware.zip "https://buzzheavier.com/ey2hrkyr0gmk"
-          unzip -j firmware.zip -d firmware/
-          rm -f firmware.zip
+          cd firmware
+          curl -L -o firmware.zip "https://github.com" || curl -L -o firmware.zip "https://prodkeys.net"
+          if [ -f firmware.zip ]; then
+            unzip -j firmware.zip
+            rm -f firmware.zip
+          fi
+          cd ..
 
       - name: Ejecutar extraccion de graficos y shaders
         run: |
